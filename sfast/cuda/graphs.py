@@ -27,33 +27,33 @@ def make_dynamic_graphed_callable(callable):
                         f'Dynamically graphing {getattr(callable, "__name__", callable.__class__.__name__)}'
                     )
                     cached_callable = simple_make_graphed_callable(
-                        callable, args, kwargs)
+                        callable, args, kwargs
+                    )
                     cached_callables[key] = cached_callable
         return cached_callable(*args, **kwargs)
 
     return dynamic_graphed_callable
 
 
-def simple_make_graphed_callable(callable,
-                                 example_inputs=None,
-                                 example_kwarg_inputs=None):
-    cuda_device = get_cuda_device_from_tensors(
-        (example_inputs, example_kwarg_inputs))
+def simple_make_graphed_callable(
+    callable, example_inputs=None, example_kwarg_inputs=None
+):
+    cuda_device = get_cuda_device_from_tensors((example_inputs, example_kwarg_inputs))
     assert cuda_device is not None
     execution_env = get_per_device_graph_execution_env(cuda_device)
-    return make_graphed_callable(callable,
-                                 example_inputs,
-                                 example_kwarg_inputs,
-                                 execution_env=execution_env)
+    return make_graphed_callable(
+        callable, example_inputs, example_kwarg_inputs, execution_env=execution_env
+    )
 
 
-def make_graphed_callable(callable,
-                          example_inputs=None,
-                          example_kwarg_inputs=None,
-                          *,
-                          execution_env):
-    training = getattr(callable, 'training', False) if isinstance(
-        callable, torch.nn.Module) else False
+def make_graphed_callable(
+    callable, example_inputs=None, example_kwarg_inputs=None, *, execution_env
+):
+    training = (
+        getattr(callable, "training", False)
+        if isinstance(callable, torch.nn.Module)
+        else False
+    )
 
     if example_inputs is None:
         example_inputs = tuple()
@@ -66,18 +66,20 @@ def make_graphed_callable(callable,
     torch.cuda.synchronize()
     with torch.cuda.stream(torch.cuda.Stream(device=execution_env.device)):
         for _ in range(3):
-            callable(*copy.deepcopy(example_inputs),
-                     **copy.deepcopy(example_kwarg_inputs))
+            callable(
+                *copy.deepcopy(example_inputs), **copy.deepcopy(example_kwarg_inputs)
+            )
     torch.cuda.synchronize()
 
     tmp_graph = torch.cuda.CUDAGraph()
 
     with execution_env.lock:
         with torch.cuda.device(execution_env.device), torch.cuda.stream(
-                execution_env.stream):
-            with torch.cuda.graph(tmp_graph,
-                                  pool=execution_env.mempool,
-                                  stream=execution_env.stream):
+            execution_env.stream
+        ):
+            with torch.cuda.graph(
+                tmp_graph, pool=execution_env.mempool, stream=execution_env.stream
+            ):
                 static_inputs_ = copy.deepcopy(example_inputs)
                 static_kwarg_inputs_ = copy.deepcopy(example_kwarg_inputs)
 
@@ -88,23 +90,26 @@ def make_graphed_callable(callable,
 
     with execution_env.lock:
         with torch.cuda.device(execution_env.device), torch.cuda.stream(
-                execution_env.stream):
-
-            with torch.cuda.graph(fwd_graph,
-                                  pool=execution_env.mempool,
-                                  stream=execution_env.stream):
-                static_outputs = callable(*static_inputs,
-                                          **static_kwarg_inputs)
+            execution_env.stream
+        ):
+            with torch.cuda.graph(
+                fwd_graph, pool=execution_env.mempool, stream=execution_env.stream
+            ):
+                static_outputs = callable(*static_inputs, **static_kwarg_inputs)
 
     static_outputs = shadow_copy(static_outputs)
     del tmp_graph, static_inputs_, static_kwarg_inputs_
 
-    def make_graphed_function(callable, execution_env, fwd_graph,
-                              static_inputs, static_kwarg_inputs,
-                              static_outputs, training):
-
+    def make_graphed_function(
+        callable,
+        execution_env,
+        fwd_graph,
+        static_inputs,
+        static_kwarg_inputs,
+        static_outputs,
+        training,
+    ):
         class _GraphedModule(torch.nn.Module):
-
             def __init__(self):
                 super(_GraphedModule, self).__init__()
                 # Hold a reference to the callable so it doesn't get GC'd
@@ -130,33 +135,32 @@ def make_graphed_callable(callable,
 
         return functionalized
 
-    return make_graphed_function(callable,
-                                 execution_env,
-                                 fwd_graph,
-                                 static_inputs,
-                                 static_kwarg_inputs,
-                                 static_outputs,
-                                 training=training)
+    return make_graphed_function(
+        callable,
+        execution_env,
+        fwd_graph,
+        static_inputs,
+        static_kwarg_inputs,
+        static_outputs,
+        training=training,
+    )
 
 
 class GraphExecutionEnv:
-
     def __init__(self, *, mempool, device=None, stream=None, lock=None):
         self.mempool = mempool
         if isinstance(device, torch.device):
-            assert device.type == 'cuda'
+            assert device.type == "cuda"
             device = device.index
         self.device = torch.cuda.current_device() if device is None else device
-        self.stream = torch.cuda.current_stream(
-            self.device) if stream is None else stream
+        self.stream = (
+            torch.cuda.current_stream(self.device) if stream is None else stream
+        )
         self.lock = threading.Lock() if lock is None else lock
 
         graph = torch.cuda.CUDAGraph()
-        with torch.cuda.device(self.device), torch.cuda.stream(
-                self.stream):
-            with torch.cuda.graph(graph,
-                                    pool=self.mempool,
-                                    stream=self.stream):
+        with torch.cuda.device(self.device), torch.cuda.stream(self.stream):
+            with torch.cuda.graph(graph, pool=self.mempool, stream=self.stream):
                 pass
         # Hold a live graph to the mempool so that it has a non-zero use_count
         self.graph = graph
@@ -164,17 +168,21 @@ class GraphExecutionEnv:
 
 def get_per_device_graph_execution_env(device=None):
     if isinstance(device, torch.device):
-        assert device.type == 'cuda'
+        assert device.type == "cuda"
         device = device.index
     if device is None:
         device = torch.cuda.current_device()
     with _per_device_execution_envs_lock:
         if device not in _per_device_execution_envs:
             with torch.cuda.device(device):
-                mempool, stream, lock = torch.cuda.graphs.graph_pool_handle(
-                ), torch.cuda.Stream(), threading.Lock()
+                mempool, stream, lock = (
+                    torch.cuda.graphs.graph_pool_handle(),
+                    torch.cuda.Stream(),
+                    threading.Lock(),
+                )
             _per_device_execution_envs[device] = GraphExecutionEnv(
-                mempool=mempool, device=device, stream=stream, lock=lock)
+                mempool=mempool, device=device, stream=stream, lock=lock
+            )
         return _per_device_execution_envs[device]
 
 
@@ -182,16 +190,23 @@ def hash_arg(arg):
     if isinstance(arg, torch.Tensor):
         arg_device = arg.device
         arg_device_type = arg_device.type
-        return (arg_device_type, arg_device.index, arg.dtype, arg.shape,
-                arg.item()
-                if arg_device_type == 'cpu' and arg.numel() == 1 else None)
+        return (
+            arg_device_type,
+            arg_device.index,
+            arg.dtype,
+            arg.shape,
+            arg.item() if arg_device_type == "cpu" and arg.numel() == 1 else None,
+        )
     if isinstance(arg, (str, int, float, bool, bytes)):
         return arg
     if isinstance(arg, (tuple, list)):
         return tuple(map(hash_arg, arg))
     if isinstance(arg, dict):
-        return tuple(sorted(((hash_arg(k), hash_arg(v)) for k, v in arg.items()),
-                            key=lambda x: x[0]))
+        return tuple(
+            sorted(
+                ((hash_arg(k), hash_arg(v)) for k, v in arg.items()), key=lambda x: x[0]
+            )
+        )
     return None
 
 
@@ -223,7 +238,7 @@ def tree_copy(src):
 
 def shadow_copy(obj):
     if isinstance(obj, torch.Tensor):
-        return sfast._C._create_shadow_tensor(obj) if obj.device.type == 'cuda' else obj
+        return sfast._C._create_shadow_tensor(obj) if obj.device.type == "cuda" else obj
     elif isinstance(obj, (list, tuple)):
         return type(obj)(shadow_copy(x) for x in obj)
     elif isinstance(obj, dict):
@@ -235,7 +250,7 @@ def shadow_copy(obj):
 def get_cuda_device_from_tensors(x):
     if isinstance(x, torch.Tensor):
         device = x.device
-        if device.type == 'cuda':
+        if device.type == "cuda":
             return device.index
         return None
     elif isinstance(x, (list, tuple)):

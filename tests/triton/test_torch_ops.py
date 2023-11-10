@@ -9,7 +9,6 @@ sfast_triton = torch.ops.sfast_triton
 
 
 def test_triton_contiguous_torch_op():
-
     def call_triton_contiguous(x, memory_format=torch.contiguous_format):
         return sfast_triton.contiguous(x, memory_format=memory_format)
 
@@ -27,4 +26,4 @@ def test_triton_contiguous_torch_op():
     out = traced_triton_contiguous(a)
     assert out.is_contiguous()
     torch.testing.assert_close(out, a)
-    logger.info(f'Graph: {traced_triton_contiguous.graph}')
+    logger.info(f"Graph: {traced_triton_contiguous.graph}")

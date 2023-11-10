@@ -2,9 +2,11 @@
 
 import glob
 import os
+
 # import shutil
 from os import path
 from setuptools import find_packages, setup
+
 # from typing import List
 import torch
 from torch.utils.cpp_extension import CUDA_HOME, CppExtension, CUDAExtension
@@ -14,11 +16,11 @@ assert torch_ver >= [1, 8], "Requires PyTorch >= 1.8"
 
 
 def get_version():
-    init_py_path = path.join(path.abspath(path.dirname(__file__)), "sfast",
-                             "__init__.py")
+    init_py_path = path.join(
+        path.abspath(path.dirname(__file__)), "sfast", "__init__.py"
+    )
     init_py = open(init_py_path, "r").readlines()
-    version_line = [l.strip() for l in init_py
-                    if l.startswith("__version__")][0]
+    version_line = [l.strip() for l in init_py if l.startswith("__version__")][0]
     version = version_line.split("=")[-1].strip().strip("'\"")
 
     # The following is used to build release packages.
@@ -42,28 +44,27 @@ def get_extensions():
     this_dir = path.dirname(path.abspath(__file__))
     extensions_dir = path.join(this_dir, "sfast", "csrc")
 
-    sources = glob.glob(path.join(extensions_dir, "**", "*.cpp"),
-                        recursive=True)
+    sources = glob.glob(path.join(extensions_dir, "**", "*.cpp"), recursive=True)
 
     from torch.utils.cpp_extension import ROCM_HOME
 
-    is_rocm_pytorch = (True if ((torch.version.hip is not None) and
-                                (ROCM_HOME is not None)) else False)
+    is_rocm_pytorch = (
+        True if ((torch.version.hip is not None) and (ROCM_HOME is not None)) else False
+    )
     if is_rocm_pytorch:
         assert torch_ver >= [1, 8], "ROCM support requires PyTorch >= 1.8!"
 
     # common code between cuda and rocm platforms, for hipify version [1,0,0] and later.
-    source_cuda = glob.glob(path.join(extensions_dir, "**", "*.cu"),
-                            recursive=True)
+    source_cuda = glob.glob(path.join(extensions_dir, "**", "*.cu"), recursive=True)
 
     extension = CppExtension
 
     extra_compile_args = {"cxx": []}
     define_macros = []
 
-    if (torch.cuda.is_available() and
-        ((CUDA_HOME is not None) or is_rocm_pytorch)) or os.getenv(
-            "FORCE_CUDA", "0") == "1":
+    if (
+        torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)
+    ) or os.getenv("FORCE_CUDA", "0") == "1":
         extension = CUDAExtension
         sources += source_cuda
 

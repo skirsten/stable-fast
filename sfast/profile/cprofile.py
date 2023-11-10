@@ -5,9 +5,7 @@ import pstats
 
 
 def with_cProfile(*amount, out_func=None, file=None):
-
     def _with_cProfile(func):
-
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             pr = cProfile.Profile()
@@ -18,7 +16,8 @@ def with_cProfile(*amount, out_func=None, file=None):
                 if out_func is None:
                     stats_stream = io.StringIO()
                     stats = pstats.Stats(pr, stream=stats_stream).sort_stats(
-                        pstats.SortKey.CUMULATIVE)
+                        pstats.SortKey.CUMULATIVE
+                    )
                     stats.print_stats(*amount)
                     msg = stats_stream.getvalue()
                     if file is None:

@@ -1,4 +1,5 @@
 import logging
+
 # import functools
 # import torch
 import torch.nn as nn
@@ -17,7 +18,6 @@ logger = logging.getLogger()
 
 
 class TritonConv2D(nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
@@ -30,7 +30,6 @@ class TritonConv2D(nn.Module):
 
 
 class TritonLinear(nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
@@ -52,7 +51,6 @@ class TritonLinear(nn.Module):
 
 
 class TritonGroupNorm(nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
@@ -63,12 +61,12 @@ class TritonGroupNorm(nn.Module):
         # return self.module(x, *args, **kwargs)
         module = self.module
         # x = TTO.contiguous(x)
-        return TTO.group_norm(x, module.num_groups, module.weight, module.bias,
-                              module.eps)
+        return TTO.group_norm(
+            x, module.num_groups, module.weight, module.bias, module.eps
+        )
 
 
 class TritonGroupNormSiLU(nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
@@ -79,5 +77,6 @@ class TritonGroupNormSiLU(nn.Module):
         # return self.module(x, *args, **kwargs)
         module = self.module
         # x = TTO.contiguous(x)
-        return TTO.group_norm_silu(x, module.num_groups, module.weight,
-                                   module.bias, module.eps)
+        return TTO.group_norm_silu(
+            x, module.num_groups, module.weight, module.bias, module.eps
+        )

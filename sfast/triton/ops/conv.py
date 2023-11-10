@@ -6,118 +6,54 @@ import triton.language as tl
 
 def conv_heuristics():
     configs = [
-        triton.Config({
-            "BLOCK_M": 128,
-            "BLOCK_N": 128,
-            "BLOCK_K": 32
-        },
-                      num_stages=2,
-                      num_warps=8),
-        triton.Config({
-            "BLOCK_M": 256,
-            "BLOCK_N": 64,
-            "BLOCK_K": 32
-        },
-                      num_stages=2,
-                      num_warps=8),
-        triton.Config({
-            "BLOCK_M": 256,
-            "BLOCK_N": 32,
-            "BLOCK_K": 32
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 256,
-            "BLOCK_N": 32,
-            "BLOCK_K": 64
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 256,
-            "BLOCK_N": 16,
-            "BLOCK_K": 32
-        },
-                      num_stages=4,
-                      num_warps=2),
-        triton.Config({
-            "BLOCK_M": 64,
-            "BLOCK_N": 128,
-            "BLOCK_K": 32
-        },
-                      num_stages=4,
-                      num_warps=8),
-        triton.Config({
-            "BLOCK_M": 128,
-            "BLOCK_N": 64,
-            "BLOCK_K": 32
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 64,
-            "BLOCK_N": 64,
-            "BLOCK_K": 32
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 128,
-            "BLOCK_N": 16,
-            "BLOCK_K": 32
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 128,
-            "BLOCK_N": 128,
-            "BLOCK_K": 128
-        },
-                      num_stages=3,
-                      num_warps=8),
-        triton.Config({
-            "BLOCK_M": 256,
-            "BLOCK_N": 64,
-            "BLOCK_K": 128
-        },
-                      num_stages=3,
-                      num_warps=8),
-        triton.Config({
-            "BLOCK_M": 256,
-            "BLOCK_N": 32,
-            "BLOCK_K": 128
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 64,
-            "BLOCK_N": 128,
-            "BLOCK_K": 128
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 128,
-            "BLOCK_N": 64,
-            "BLOCK_K": 128
-        },
-                      num_stages=4,
-                      num_warps=4),
-        triton.Config({
-            "BLOCK_M": 128,
-            "BLOCK_N": 32,
-            "BLOCK_K": 64
-        },
-                      num_stages=4,
-                      num_warps=2),
-        triton.Config({
-            "BLOCK_M": 64,
-            "BLOCK_N": 64,
-            "BLOCK_K": 64
-        },
-                      num_stages=4,
-                      num_warps=2),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 32}, num_stages=2, num_warps=8
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=2, num_warps=8
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 32, "BLOCK_K": 32}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 32, "BLOCK_K": 64}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 16, "BLOCK_K": 32}, num_stages=4, num_warps=2
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 32}, num_stages=4, num_warps=8
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 32}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 16, "BLOCK_K": 32}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 128, "BLOCK_K": 128}, num_stages=3, num_warps=8
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 64, "BLOCK_K": 128}, num_stages=3, num_warps=8
+        ),
+        triton.Config(
+            {"BLOCK_M": 256, "BLOCK_N": 32, "BLOCK_K": 128}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 128, "BLOCK_K": 128}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 64, "BLOCK_K": 128}, num_stages=4, num_warps=4
+        ),
+        triton.Config(
+            {"BLOCK_M": 128, "BLOCK_N": 32, "BLOCK_K": 64}, num_stages=4, num_warps=2
+        ),
+        triton.Config(
+            {"BLOCK_M": 64, "BLOCK_N": 64, "BLOCK_K": 64}, num_stages=4, num_warps=2
+        ),
         # triton.Config(
         #     {"BLOCK_M": 128, "BLOCK_N": 16, "BLOCK_K": 64}, num_stages=4, num_warps=2
         # ),
@@ -222,12 +158,15 @@ def estimate_conv_time(
     # time to load data
     num_sm = _triton.runtime.num_sm(backend, device)
     active_cta_ratio = min(1, num_ctas / num_sm)
-    active_cta_ratio_bw1 = min(1, num_ctas /
-                               32)  # 32 active ctas are enough to saturate
-    active_cta_ratio_bw2 = max(min(1, (num_ctas - 32) / (108 - 32)),
-                               0)  # 32-108, remaining 5%
+    active_cta_ratio_bw1 = min(
+        1, num_ctas / 32
+    )  # 32 active ctas are enough to saturate
+    active_cta_ratio_bw2 = max(
+        min(1, (num_ctas - 32) / (108 - 32)), 0
+    )  # 32-108, remaining 5%
     dram_bw = get_dram_gbps(backend, device) * (
-        active_cta_ratio_bw1 * 0.95 + active_cta_ratio_bw2 * 0.05)  # in GB/s
+        active_cta_ratio_bw1 * 0.95 + active_cta_ratio_bw2 * 0.05
+    )  # in GB/s
     l2_bw = dram_bw * 4  # rough estimation (should be 4.7 for A100?)
     # assume 80% of (following) loads are in L2 cache
     load_a_dram = M * K * dtsize * (1 + 0.2 * (num_cta_n - 1))
@@ -247,9 +186,11 @@ def estimate_conv_time(
 
     total_time_ms = max(compute_ms, load_ms) + store_ms
     if debug:
-        print(f"Total time: {total_time_ms}ms, compute time: {compute_ms}ms, "
-              f"loading time: {load_ms}ms, store time: {store_ms}ms, "
-              f"Activate CTAs: {active_cta_ratio*100}%")
+        print(
+            f"Total time: {total_time_ms}ms, compute time: {compute_ms}ms, "
+            f"loading time: {load_ms}ms, store time: {store_ms}ms, "
+            f"Activate CTAs: {active_cta_ratio*100}%"
+        )
     return total_time_ms
 
 
@@ -273,10 +214,8 @@ def early_config_prune(configs, named_args):
             kw["BLOCK_K"],
             config.num_stages,
         )
-        max_shared_memory = driver.utils.get_device_properties(
-            device)["max_shared_mem"]
-        required_shared_memory = (BLOCK_M +
-                                  BLOCK_N) * BLOCK_K * num_stages * dtsize
+        max_shared_memory = driver.utils.get_device_properties(device)["max_shared_mem"]
+        required_shared_memory = (BLOCK_M + BLOCK_N) * BLOCK_K * num_stages * dtsize
         if required_shared_memory <= max_shared_memory:
             pruned_configs.append(config)
     configs = pruned_configs
@@ -314,8 +253,9 @@ def early_config_prune(configs, named_args):
             nearest = heapq.nsmallest(
                 2,
                 v,
-                key=lambda x: 10 + abs(x[1] - optimal_num_stages) if
-                (x[1] - optimal_num_stages) < 0 else x[1] - optimal_num_stages,
+                key=lambda x: 10 + abs(x[1] - optimal_num_stages)
+                if (x[1] - optimal_num_stages) < 0
+                else x[1] - optimal_num_stages,
             )
 
             for n in nearest:
@@ -415,20 +355,23 @@ def _kernel_delta_x_hwc(
         delta_xh = tl.load(delta_xh_ptrs, mask=off_x_crs < CRS, other=0)
         delta_xw = tl.load(delta_xw_ptrs, mask=off_x_crs < CRS, other=0)
         delta_xc = tl.load(delta_xc_ptrs, mask=off_x_crs < CRS, other=0)
-        off_x_crs_unpacked = (delta_xh * stride_xh + delta_xw * stride_xw +
-                              delta_xc * stride_xc)
+        off_x_crs_unpacked = (
+            delta_xh * stride_xh + delta_xw * stride_xw + delta_xc * stride_xc
+        )
         x_ptrs = x + off_x_nhw[:, None] + off_x_crs_unpacked[None, :]
     else:
         x_ptrs = x + off_x_nhw[:, None] + off_x_crs[None, :]
         delta_xh = 0
         delta_xw = 0
 
-    mask_x = ((off_x_n < BATCH)[:, None]
-              & (off_x_crs < CRS)[None, :]
-              & (off_x_h[:, None] + delta_xh[None, :] >= 0)
-              & (off_x_h[:, None] + delta_xh[None, :] < IN_H)
-              & (off_x_w[:, None] + delta_xw[None, :] >= 0)
-              & (off_x_w[:, None] + delta_xw[None, :] < IN_W))
+    mask_x = (
+        (off_x_n < BATCH)[:, None]
+        & (off_x_crs < CRS)[None, :]
+        & (off_x_h[:, None] + delta_xh[None, :] >= 0)
+        & (off_x_h[:, None] + delta_xh[None, :] < IN_H)
+        & (off_x_w[:, None] + delta_xw[None, :] >= 0)
+        & (off_x_w[:, None] + delta_xw[None, :] < IN_W)
+    )
 
     # offset for the inital ptr for w
     off_w_crs = tl.arange(0, BLOCK_K)
@@ -458,18 +401,21 @@ def _kernel_delta_x_hwc(
             delta_xh = tl.load(delta_xh_ptrs, mask=off_x_crs < CRS, other=0)
             delta_xw = tl.load(delta_xw_ptrs, mask=off_x_crs < CRS, other=0)
             delta_xc = tl.load(delta_xc_ptrs, mask=off_x_crs < CRS, other=0)
-            off_x_crs_unpacked = (delta_xh * stride_xh + delta_xw * stride_xw +
-                                  delta_xc * stride_xc)
+            off_x_crs_unpacked = (
+                delta_xh * stride_xh + delta_xw * stride_xw + delta_xc * stride_xc
+            )
             x_ptrs = x + off_x_nhw[:, None] + off_x_crs_unpacked[None, :]
         else:
             x_ptrs += BLOCK_K
 
-        mask_x = ((off_x_n < BATCH)[:, None]
-                  & (off_x_crs < CRS)[None, :]
-                  & (off_x_h[:, None] + delta_xh[None, :] >= 0)
-                  & (off_x_h[:, None] + delta_xh[None, :] < IN_H)
-                  & (off_x_w[:, None] + delta_xw[None, :] >= 0)
-                  & (off_x_w[:, None] + delta_xw[None, :] < IN_W))
+        mask_x = (
+            (off_x_n < BATCH)[:, None]
+            & (off_x_crs < CRS)[None, :]
+            & (off_x_h[:, None] + delta_xh[None, :] >= 0)
+            & (off_x_h[:, None] + delta_xh[None, :] < IN_H)
+            & (off_x_w[:, None] + delta_xw[None, :] >= 0)
+            & (off_x_w[:, None] + delta_xw[None, :] < IN_W)
+        )
         mask_w = (off_x_crs < CRS)[:, None] & (off_w_k < KERNEL_N)[None, :]
         # ------ prefetch ------
         # ------ load x ------
@@ -493,14 +439,21 @@ def _kernel_delta_x_hwc(
     off_y_w = off_y_hw % OUT_W + output_padding_w
 
     # y ptrs in the block of [BLOCK_M, BLOCK_N]
-    y_ptrs = (y + off_y_n[:, None] * stride_yn + off_y_h[:, None] * stride_yh +
-              off_y_w[:, None] * stride_yw + off_y_k[None, :] * stride_yc)
+    y_ptrs = (
+        y
+        + off_y_n[:, None] * stride_yn
+        + off_y_h[:, None] * stride_yh
+        + off_y_w[:, None] * stride_yw
+        + off_y_k[None, :] * stride_yc
+    )
 
     # out-of-bounds check
-    mask_y = ((off_y_n < BATCH)[:, None]
-              & (off_y_h < OUT_H + output_padding_h)[:, None]
-              & (off_y_w < OUT_W + output_padding_w)[:, None]
-              & (off_y_k < KERNEL_N)[None, :])
+    mask_y = (
+        (off_y_n < BATCH)[:, None]
+        & (off_y_h < OUT_H + output_padding_h)[:, None]
+        & (off_y_w < OUT_W + output_padding_w)[:, None]
+        & (off_y_k < KERNEL_N)[None, :]
+    )
 
     tl.store(y_ptrs, acc, mask=mask_y)
 
@@ -593,11 +546,13 @@ def _kernel_delta_x(
     else:
         x_ptrs = x + off_x_nhw[:, None] + off_x_crs[None, :]
 
-    mask_x = ((off_x_n < BATCH)
-              & (off_x_h >= 0)
-              & (off_x_h < IN_H)
-              & (off_x_w >= 0)
-              & (off_x_w < IN_W))[:, None] & (off_x_crs < CRS)[None, :]
+    mask_x = (
+        (off_x_n < BATCH)
+        & (off_x_h >= 0)
+        & (off_x_h < IN_H)
+        & (off_x_w >= 0)
+        & (off_x_w < IN_W)
+    )[:, None] & (off_x_crs < CRS)[None, :]
 
     # offset for the inital ptr for w
     off_w_crs = tl.arange(0, BLOCK_K)
@@ -622,19 +577,19 @@ def _kernel_delta_x(
         if not CONV1X1_NHWC:
             delta_x_ptrs += BLOCK_K
             off_x_crs = crs + BLOCK_K + tl.arange(0, BLOCK_K)
-            off_x_crs_unpacked = tl.load(delta_x_ptrs,
-                                         mask=off_x_crs < CRS,
-                                         other=0)
+            off_x_crs_unpacked = tl.load(delta_x_ptrs, mask=off_x_crs < CRS, other=0)
             x_ptrs = x + off_x_nhw[:, None] + off_x_crs_unpacked[None, :]
         else:
             off_x_crs = crs + BLOCK_K + tl.arange(0, BLOCK_K)
             x_ptrs += BLOCK_K
 
-        mask_x = ((off_x_n < BATCH)
-                  & (off_x_h >= 0)
-                  & (off_x_h < IN_H)
-                  & (off_x_w >= 0)
-                  & (off_x_w < IN_W))[:, None] & (off_x_crs < CRS)[None, :]
+        mask_x = (
+            (off_x_n < BATCH)
+            & (off_x_h >= 0)
+            & (off_x_h < IN_H)
+            & (off_x_w >= 0)
+            & (off_x_w < IN_W)
+        )[:, None] & (off_x_crs < CRS)[None, :]
         mask_w = (off_x_crs < CRS)[:, None] & (off_w_k < KERNEL_N)[None, :]
         # ------ prefetch ------
         # ------ load x ------
@@ -658,14 +613,21 @@ def _kernel_delta_x(
     off_y_w = off_y_hw % OUT_W + output_padding_w
 
     # y ptrs in the block of [BLOCK_M, BLOCK_N]
-    y_ptrs = (y + off_y_n[:, None] * stride_yn + off_y_h[:, None] * stride_yh +
-              off_y_w[:, None] * stride_yw + off_y_k[None, :] * stride_yc)
+    y_ptrs = (
+        y
+        + off_y_n[:, None] * stride_yn
+        + off_y_h[:, None] * stride_yh
+        + off_y_w[:, None] * stride_yw
+        + off_y_k[None, :] * stride_yc
+    )
 
     # out-of-bounds check
-    mask_y = ((off_y_n < BATCH)[:, None]
-              & (off_y_h < OUT_H + output_padding_h)[:, None]
-              & (off_y_w < OUT_W + output_padding_w)[:, None]
-              & (off_y_k < KERNEL_N)[None, :])
+    mask_y = (
+        (off_y_n < BATCH)[:, None]
+        & (off_y_h < OUT_H + output_padding_h)[:, None]
+        & (off_y_w < OUT_W + output_padding_w)[:, None]
+        & (off_y_k < KERNEL_N)[None, :]
+    )
 
     tl.store(y_ptrs, acc, mask=mask_y)
 
@@ -743,8 +705,9 @@ class _conv:
         r_dilation_h = dilation_h * window_unpack_h
         r_dilation_w = dilation_w * window_unpack_w
         r_inc = window_unpack_c
-        delta_x = (r_dilation_h * stride_xh + r_dilation_w * stride_xw +
-                   r_inc * stride_xc)
+        delta_x = (
+            r_dilation_h * stride_xh + r_dilation_w * stride_xw + r_inc * stride_xc
+        )
         return delta_x
 
     @staticmethod
@@ -774,30 +737,44 @@ class _conv:
         # out_channel, in_channel, kernel_height, kernel_width
         kernel_size = [shape_w[wh], shape_w[ww]]
         input_size = [shape_x[xh], shape_x[xw]]
-        assert (not shape_bias or shape_bias[0] == shape_w[wn]
-                ), f"bias shape did not match{shape_bias} != {shape_w[wn]}"
+        assert (
+            not shape_bias or shape_bias[0] == shape_w[wn]
+        ), f"bias shape did not match{shape_bias} != {shape_w[wn]}"
         in_channel = shape_w[wc] * groups
 
-        assert shape_x[
-            xc] % groups == 0, "in_channels must be divisible by groups"
-        assert shape_w[
-            wn] % groups == 0, "out_channels must be divisible by groups"
-        assert (shape_x[xc] == in_channel
-                ), f"in_channel did not match {shape_x[xc]} != {in_channel}"
+        assert shape_x[xc] % groups == 0, "in_channels must be divisible by groups"
+        assert shape_w[wn] % groups == 0, "out_channels must be divisible by groups"
+        assert (
+            shape_x[xc] == in_channel
+        ), f"in_channel did not match {shape_x[xc]} != {in_channel}"
 
-        assert (len(stride) == len(padding) == len(dilation) ==
-                len(output_padding) == len(kernel_size) == len(input_size))
+        assert (
+            len(stride)
+            == len(padding)
+            == len(dilation)
+            == len(output_padding)
+            == len(kernel_size)
+            == len(input_size)
+        )
 
         # output shape
         shape_y = [0] * 4
         shape_y[yn] = shape_x[xn]
         shape_y[yc] = shape_w[wn]
-        shape_y[yh] = (input_size[0] + 2 * padding[0] - dilation[0] *
-                       (kernel_size[0] - 1) - 1 +
-                       stride[0]) // stride[0] + 2 * output_padding[0]
-        shape_y[yw] = (input_size[1] + 2 * padding[1] - dilation[1] *
-                       (kernel_size[1] - 1) - 1 +
-                       stride[1]) // stride[1] + 2 * output_padding[1]
+        shape_y[yh] = (
+            input_size[0]
+            + 2 * padding[0]
+            - dilation[0] * (kernel_size[0] - 1)
+            - 1
+            + stride[0]
+        ) // stride[0] + 2 * output_padding[0]
+        shape_y[yw] = (
+            input_size[1]
+            + 2 * padding[1]
+            - dilation[1] * (kernel_size[1] - 1)
+            - 1
+            + stride[1]
+        ) // stride[1] + 2 * output_padding[1]
 
         BATCH = shape_x[xn]
         IN_C = shape_x[xc]
@@ -824,10 +801,9 @@ class _conv:
         else:
             memory_format = torch.contiguous_format
         # allocate output
-        y = torch.empty(shape_y,
-                        device=device,
-                        dtype=x.dtype,
-                        memory_format=memory_format)
+        y = torch.empty(
+            shape_y, device=device, dtype=x.dtype, memory_format=memory_format
+        )
         stride_y = y.stride()
 
         # allocate tmp
@@ -837,13 +813,13 @@ class _conv:
         # accumulator types
         x_dtype = x.dtype
         if x_dtype in (
-                torch.float32,
-                torch.bfloat16,
+            torch.float32,
+            torch.bfloat16,
         ):
             ACC_TYPE = tl.float32
-        elif x_dtype in (torch.float16, ):
+        elif x_dtype in (torch.float16,):
             ACC_TYPE = tl.float16
-        elif x_dtype in (torch.float64, ):
+        elif x_dtype in (torch.float64,):
             ACC_TYPE = tl.float64
         else:
             ACC_TYPE = tl.int32
@@ -855,9 +831,14 @@ class _conv:
         if stride_x[xc] == 1 and KERNEL_H == 1 and KERNEL_W == 1:
             CONV1X1_NHWC = True
         #  do we need delta x ptr for h, w, c dimension each or not
-        DELTA_X_PTR_HWC = (False if
-                           ((padding[0] == 0 and padding[1] == 0) or
-                            (KERNEL_H == 1 and KERNEL_W == 1)) else True)
+        DELTA_X_PTR_HWC = (
+            False
+            if (
+                (padding[0] == 0 and padding[1] == 0)
+                or (KERNEL_H == 1 and KERNEL_W == 1)
+            )
+            else True
+        )
         if not CONV1X1_NHWC:
             if DELTA_X_PTR_HWC:
                 delta_xh, delta_xw, delta_xc = _conv._delta_x_ptr_hwc(
@@ -1015,15 +996,15 @@ class _conv:
 
     @staticmethod
     def forward(
-            x,
-            w,
-            bias,
-            stride=(1, 1),
-            padding=(0, 0),
-            dilation=(1, 1),
-            transposed=False,
-            output_padding=(0, 0),
-            groups=1,
+        x,
+        w,
+        bias,
+        stride=(1, 1),
+        padding=(0, 0),
+        dilation=(1, 1),
+        transposed=False,
+        output_padding=(0, 0),
+        groups=1,
     ):
         if groups != 1:
             print(f"Do not support groups = {groups}")

@@ -69,7 +69,7 @@ def flatten_obj(obj):
         type_num = 11
         flatten_func = flatten_unknown
 
-    return (tensor_from_int(type_num), ) + flatten_func(obj)
+    return (tensor_from_int(type_num),) + flatten_func(obj)
 
 
 def flatten_none(obj):
@@ -77,11 +77,11 @@ def flatten_none(obj):
 
 
 def flatten_tensor(obj):
-    return (obj, )
+    return (obj,)
 
 
 def _flatten_bool(obj):
-    return (torch.tensor([obj], dtype=torch.bool), )
+    return (torch.tensor([obj], dtype=torch.bool),)
 
 
 _flatten_bool_cached = functools.lru_cache(maxsize=256)(_flatten_bool)
@@ -92,7 +92,7 @@ def flatten_bool(obj):
 
 
 def _flatten_float(obj):
-    return (torch.tensor([obj], dtype=torch.float64), )
+    return (torch.tensor([obj], dtype=torch.float64),)
 
 
 _flatten_float_cached = functools.lru_cache(maxsize=256)(_flatten_float)
@@ -103,7 +103,7 @@ def flatten_float(obj):
 
 
 def _flatten_int(obj):
-    return (torch.tensor([obj], dtype=torch.int64), )
+    return (torch.tensor([obj], dtype=torch.int64),)
 
 
 _flatten_int_cached = functools.lru_cache(maxsize=256)(_flatten_int)
@@ -114,11 +114,11 @@ def flatten_int(obj):
 
 
 def flatten_str(obj):
-    return flatten_bytes(obj.encode('utf-8'))
+    return flatten_bytes(obj.encode("utf-8"))
 
 
 def _flatten_bytes(obj):
-    return (torch.as_tensor(tuple(obj), dtype=torch.uint8), )
+    return (torch.as_tensor(tuple(obj), dtype=torch.uint8),)
 
 
 _flatten_bytes_cached = functools.lru_cache(maxsize=256)(_flatten_bytes)
@@ -130,27 +130,33 @@ def flatten_bytes(obj):
 
 def flatten_list_or_tuple(obj):
     size = len(obj)
-    return (tensor_from_int(size),
-            *itertools.chain.from_iterable(flatten_obj(arg) for arg in obj))
+    return (
+        tensor_from_int(size),
+        *itertools.chain.from_iterable(flatten_obj(arg) for arg in obj),
+    )
 
 
 def flatten_dict(obj):
     keys = list(obj.keys())
     keys.sort()
     size = len(keys)
-    return (tensor_from_int(size),
-            *itertools.chain.from_iterable(
-                itertools.chain(flatten_obj(key), flatten_obj(obj[key])) for key in keys))
+    return (
+        tensor_from_int(size),
+        *itertools.chain.from_iterable(
+            itertools.chain(flatten_obj(key), flatten_obj(obj[key])) for key in keys
+        ),
+    )
 
 
 def flatten_dataclass(obj):
-    d = dict((field.name, getattr(obj, field.name))
-             for field in dataclasses.fields(obj))
+    d = dict(
+        (field.name, getattr(obj, field.name)) for field in dataclasses.fields(obj)
+    )
     return flatten_unknown(obj.__class__) + flatten_dict(d)
 
 
 def flatten_unknown(obj):
-    return (save_object_reference_in_tensor(obj), )
+    return (save_object_reference_in_tensor(obj),)
 
 
 def unflatten_tensors(tensors, start=0):
@@ -205,7 +211,7 @@ def unflatten_int(tensors, start):
 
 def unflatten_str(tensors, start):
     bytes_obj, start = unflatten_bytes(tensors, start)
-    return bytes_obj.decode('utf-8'), start
+    return bytes_obj.decode("utf-8"), start
 
 
 def unflatten_bytes(tensors, start):
@@ -244,7 +250,6 @@ def unflatten_unknown(tensors, start):
 
 
 class ObjectStorationHelper(torch.autograd.Function):
-
     @staticmethod
     def forward(ctx, obj):
         obj_id = id(obj)
@@ -259,7 +264,6 @@ save_object_reference_in_tensor = ObjectStorationHelper.apply
 
 
 class ObjectRestorationHelper(torch.autograd.Function):
-
     @staticmethod
     def forward(ctx, t):
         obj_id = t.item()

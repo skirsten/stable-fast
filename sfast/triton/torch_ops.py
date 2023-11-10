@@ -2,20 +2,21 @@ import torch
 import sfast
 from sfast.utils.custom_python_operator import register_custom_python_operator
 from .ops.copy import copy
-from .ops.group_norm import (group_norm_forward, group_norm_silu_forward)
+from .ops.group_norm import group_norm_forward, group_norm_silu_forward
 from .ops.conv import conv_forward
 
 aten = torch.ops.aten
 
 
 def construct_triton_contiguous_torch_op():
-
     class TritonContiguous(torch.autograd.Function):
-
         @staticmethod
         def forward(ctx, x, memory_format=torch.contiguous_format):
-            if x.device.type != 'cuda' or x.ndim > 4 or x.is_contiguous(
-                    memory_format=memory_format):
+            if (
+                x.device.type != "cuda"
+                or x.ndim > 4
+                or x.is_contiguous(memory_format=memory_format)
+            ):
                 return aten.contiguous(x, memory_format=memory_format)
             else:
                 dst = torch.empty_like(x, memory_format=memory_format)
@@ -33,18 +34,20 @@ def construct_triton_contiguous_torch_op():
 
 contiguous = construct_triton_contiguous_torch_op()
 register_custom_python_operator(
-    'sfast_triton::contiguous(Tensor a, MemoryFormat memory_format) -> Tensor',
-    contiguous)
+    "sfast_triton::contiguous(Tensor a, MemoryFormat memory_format) -> Tensor",
+    contiguous,
+)
 
 
 def constuct_triton_clone_torch_op():
-
     class TritonClone(torch.autograd.Function):
-
         @staticmethod
         def forward(ctx, x, memory_format=torch.preserve_format):
-            if x.device.type != 'cuda' or x.ndim > 4 or x.is_contiguous(
-                    memory_format=memory_format):
+            if (
+                x.device.type != "cuda"
+                or x.ndim > 4
+                or x.is_contiguous(memory_format=memory_format)
+            ):
                 return aten.clone(x, memory_format=memory_format)
             else:
                 dst = torch.empty_like(x, memory_format=memory_format)
@@ -62,34 +65,41 @@ def constuct_triton_clone_torch_op():
 
 clone = constuct_triton_clone_torch_op()
 register_custom_python_operator(
-    'sfast_triton::clone(Tensor a, MemoryFormat memory_format) -> Tensor', clone)
+    "sfast_triton::clone(Tensor a, MemoryFormat memory_format) -> Tensor", clone
+)
 
 
 def construct_triton_reshape_torch_op():
-
     class TritonReshape(torch.autograd.Function):
-
         @staticmethod
         def forward(ctx, x, shape):
             ctx.shape = x.shape
-            if x.device.type != 'cuda' or x.ndim > 4 or sfast._C._compute_stride(
-                    x.shape, x.stride(), shape) is not None:
+            if (
+                x.device.type != "cuda"
+                or x.ndim > 4
+                or sfast._C._compute_stride(x.shape, x.stride(), shape) is not None
+            ):
                 return aten.reshape(x, shape)
             else:
-                dst = torch.empty_like(x,
-                                       memory_format=torch.contiguous_format)
+                dst = torch.empty_like(x, memory_format=torch.contiguous_format)
                 copy(dst, x)
                 return aten.reshape(dst, shape)
 
         @staticmethod
         def backward(ctx, grad_output):
-            if grad_output.device.type != 'cuda' or grad_output.ndim > 4 or sfast._C._compute_stride(
-                    grad_output.shape, grad_output.stride(),
-                    ctx.shape) is not None:
+            if (
+                grad_output.device.type != "cuda"
+                or grad_output.ndim > 4
+                or sfast._C._compute_stride(
+                    grad_output.shape, grad_output.stride(), ctx.shape
+                )
+                is not None
+            ):
                 return grad_output.reshape(ctx.shape), None
             else:
-                dst = torch.empty_like(grad_output,
-                                       memory_format=torch.contiguous_format)
+                dst = torch.empty_like(
+                    grad_output, memory_format=torch.contiguous_format
+                )
                 copy(dst, grad_output)
                 return dst.reshape(ctx.shape), None
 
@@ -101,24 +111,24 @@ def construct_triton_reshape_torch_op():
 
 reshape = construct_triton_reshape_torch_op()
 register_custom_python_operator(
-    'sfast_triton::reshape(Tensor a, int[] shape) -> Tensor', reshape)
+    "sfast_triton::reshape(Tensor a, int[] shape) -> Tensor", reshape
+)
 
 
 def construct_triton_group_norm_torch_op():
-
     class TritonGroupNorm(torch.autograd.Function):
-
         @staticmethod
         def forward(ctx, input, num_groups, weight=None, bias=None, eps=1e-05):
             device_type = input.device.type
-            if device_type != 'cuda' or input.ndim > 4:
+            if device_type != "cuda" or input.ndim > 4:
                 input = input.contiguous()
                 if weight is not None:
                     weight = weight.contiguous()
                 if bias is not None:
                     bias = bias.contiguous()
                 output, mean, rstd = aten.native_group_norm(
-                    input, num_groups, weight, bias, eps)
+                    input, num_groups, weight, bias, eps
+                )
             else:
                 grad_mode_enabled = torch.is_grad_enabled()
                 output, mean, rstd = group_norm_forward(
@@ -128,7 +138,8 @@ def construct_triton_group_norm_torch_op():
                     bias,
                     eps,
                     output_mean=grad_mode_enabled,
-                    output_rstd=grad_mode_enabled)
+                    output_rstd=grad_mode_enabled,
+                )
             ctx.save_for_backward(input, weight, bias, mean, rstd)
             ctx.num_groups = num_groups
             return output
@@ -136,9 +147,11 @@ def construct_triton_group_norm_torch_op():
         @staticmethod
         def backward(ctx, grad_output):
             input, weight, bias, mean, rstd = ctx.saved_tensors
-            grad_input_mask = (ctx.needs_input_grad[0],
-                               ctx.needs_input_grad[1],
-                               ctx.needs_input_grad[2])
+            grad_input_mask = (
+                ctx.needs_input_grad[0],
+                ctx.needs_input_grad[1],
+                ctx.needs_input_grad[2],
+            )
             N, C = input.shape[:2]
             HxW = input.numel() // (N * C)
             grad_output = grad_output.contiguous()
@@ -148,8 +161,17 @@ def construct_triton_group_norm_torch_op():
             if weight is not None:
                 weight = weight.contiguous()
             grad_inputs = aten.native_group_norm_backward(
-                grad_output, input, mean, rstd, weight, N, C, HxW,
-                ctx.num_groups, grad_input_mask)
+                grad_output,
+                input,
+                mean,
+                rstd,
+                weight,
+                N,
+                C,
+                HxW,
+                ctx.num_groups,
+                grad_input_mask,
+            )
             grad_input, grad_weight, grad_bias = grad_inputs
             return grad_input, None, grad_weight, grad_bias, None
 
@@ -161,25 +183,25 @@ def construct_triton_group_norm_torch_op():
 
 group_norm = construct_triton_group_norm_torch_op()
 register_custom_python_operator(
-    'sfast_triton::group_norm(Tensor input, int num_groups, Tensor weight, Tensor bias, float eps) -> Tensor',
-    group_norm)
+    "sfast_triton::group_norm(Tensor input, int num_groups, Tensor weight, Tensor bias, float eps) -> Tensor",
+    group_norm,
+)
 
 
 def construct_triton_group_norm_silu_torch_op():
-
     class TritonGroupNormSiLU(torch.autograd.Function):
-
         @staticmethod
         def forward(ctx, input, num_groups, weight=None, bias=None, eps=1e-05):
             device_type = input.device.type
-            if device_type != 'cuda' or input.ndim > 4:
+            if device_type != "cuda" or input.ndim > 4:
                 input = input.contiguous()
                 if weight is not None:
                     weight = weight.contiguous()
                 if bias is not None:
                     bias = bias.contiguous()
                 output, mean, rstd = aten.native_group_norm(
-                    input, num_groups, weight, bias, eps)
+                    input, num_groups, weight, bias, eps
+                )
                 output = aten.silu(output)
             else:
                 grad_mode_enabled = torch.is_grad_enabled()
@@ -190,7 +212,8 @@ def construct_triton_group_norm_silu_torch_op():
                     bias,
                     eps,
                     output_mean=grad_mode_enabled,
-                    output_rstd=grad_mode_enabled)
+                    output_rstd=grad_mode_enabled,
+                )
             ctx.save_for_backward(input, weight, bias, mean, rstd)
             ctx.num_groups = num_groups
             return output
@@ -198,9 +221,11 @@ def construct_triton_group_norm_silu_torch_op():
         @staticmethod
         def backward(ctx, grad_output):
             input, weight, bias, mean, rstd = ctx.saved_tensors
-            grad_input_mask = (ctx.needs_input_grad[0],
-                               ctx.needs_input_grad[1],
-                               ctx.needs_input_grad[2])
+            grad_input_mask = (
+                ctx.needs_input_grad[0],
+                ctx.needs_input_grad[1],
+                ctx.needs_input_grad[2],
+            )
             N, C = input.shape[:2]
             HxW = input.numel() // (N * C)
             grad_output = grad_output.contiguous()
@@ -211,12 +236,21 @@ def construct_triton_group_norm_silu_torch_op():
                 weight = weight.contiguous()
             repeats = input.shape[1] // ctx.num_groups
             normed = input.sub(
-                mean.repeat_interleave(repeats, 1)[..., None, None]).mul_(
-                    rstd.repeat_interleave(repeats, 1)[..., None, None])
+                mean.repeat_interleave(repeats, 1)[..., None, None]
+            ).mul_(rstd.repeat_interleave(repeats, 1)[..., None, None])
             grad_normed = aten.silu_backward(grad_output, normed)
             grad_inputs = aten.native_group_norm_backward(
-                grad_normed, input, mean, rstd, weight, N, C, HxW,
-                ctx.num_groups, grad_input_mask)
+                grad_normed,
+                input,
+                mean,
+                rstd,
+                weight,
+                N,
+                C,
+                HxW,
+                ctx.num_groups,
+                grad_input_mask,
+            )
             grad_input, grad_weight, grad_bias = grad_inputs
             return grad_input, None, grad_weight, grad_bias, None
 
@@ -228,46 +262,114 @@ def construct_triton_group_norm_silu_torch_op():
 
 group_norm_silu = construct_triton_group_norm_silu_torch_op()
 register_custom_python_operator(
-    'sfast_triton::group_norm_silu(Tensor input, int num_groups, Tensor weight, Tensor bias, float eps) -> Tensor',
-    group_norm_silu)
+    "sfast_triton::group_norm_silu(Tensor input, int num_groups, Tensor weight, Tensor bias, float eps) -> Tensor",
+    group_norm_silu,
+)
 
 
 def construct__convolution_torch_op():
-
     class _Convolution(torch.autograd.Function):
-
         @staticmethod
-        def forward(ctx, input, weight, bias, stride, padding, dilation,
-                    transposed, output_padding, groups, benchmark,
-                    deterministic, cudnn_enabled, allow_tf32):
+        def forward(
+            ctx,
+            input,
+            weight,
+            bias,
+            stride,
+            padding,
+            dilation,
+            transposed,
+            output_padding,
+            groups,
+            benchmark,
+            deterministic,
+            cudnn_enabled,
+            allow_tf32,
+        ):
             if groups != 1 or transposed or deterministic or not allow_tf32:
-                output = aten._convolution(input, weight, bias, stride,
-                                           padding, dilation, transposed,
-                                           output_padding, groups, benchmark,
-                                           deterministic, cudnn_enabled,
-                                           allow_tf32)
+                output = aten._convolution(
+                    input,
+                    weight,
+                    bias,
+                    stride,
+                    padding,
+                    dilation,
+                    transposed,
+                    output_padding,
+                    groups,
+                    benchmark,
+                    deterministic,
+                    cudnn_enabled,
+                    allow_tf32,
+                )
             else:
-                output = conv_forward(input, weight, bias, stride, padding,
-                                      dilation, transposed, output_padding,
-                                      groups)
+                output = conv_forward(
+                    input,
+                    weight,
+                    bias,
+                    stride,
+                    padding,
+                    dilation,
+                    transposed,
+                    output_padding,
+                    groups,
+                )
             return output
 
         @staticmethod
         def backward(ctx, grad_output):
-            return None, None, None, None, None, None, None, None, None, None, None, None, None
+            return (
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+            )
 
-    def _convolution(input, weight, bias, stride, padding, dilation,
-                     transposed, output_padding, groups, benchmark,
-                     deterministic, cudnn_enabled, allow_tf32):
-        return _Convolution.apply(input, weight, bias, stride, padding,
-                                  dilation, transposed, output_padding, groups,
-                                  benchmark, deterministic, cudnn_enabled,
-                                  allow_tf32)
+    def _convolution(
+        input,
+        weight,
+        bias,
+        stride,
+        padding,
+        dilation,
+        transposed,
+        output_padding,
+        groups,
+        benchmark,
+        deterministic,
+        cudnn_enabled,
+        allow_tf32,
+    ):
+        return _Convolution.apply(
+            input,
+            weight,
+            bias,
+            stride,
+            padding,
+            dilation,
+            transposed,
+            output_padding,
+            groups,
+            benchmark,
+            deterministic,
+            cudnn_enabled,
+            allow_tf32,
+        )
 
     return _convolution
 
 
 _convolution = construct__convolution_torch_op()
 register_custom_python_operator(
-    'sfast_triton::_convolution(Tensor input, Tensor weight, Tensor? bias, int[] stride, int[] padding, int[] dilation, bool transposed, int[] output_padding, int groups, bool benchmark, bool deterministic, bool cudnn_enabled, bool allow_tf32) -> Tensor',
-    _convolution)
+    "sfast_triton::_convolution(Tensor input, Tensor weight, Tensor? bias, int[] stride, int[] padding, int[] dilation, bool transposed, int[] output_padding, int groups, bool benchmark, bool deterministic, bool cudnn_enabled, bool allow_tf32) -> Tensor",
+    _convolution,
+)

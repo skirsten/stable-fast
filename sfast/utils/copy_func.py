@@ -9,11 +9,9 @@ def copy_func(f, globals=None, module=None, name=None):
         globals = f.__globals__
     if name is None:
         name = f.__name__
-    g = types.FunctionType(f.__code__,
-                           globals,
-                           name=name,
-                           argdefs=f.__defaults__,
-                           closure=f.__closure__)
+    g = types.FunctionType(
+        f.__code__, globals, name=name, argdefs=f.__defaults__, closure=f.__closure__
+    )
     g = functools.update_wrapper(g, f)
     if module is not None:
         g.__module__ = module

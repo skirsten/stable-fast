@@ -15,14 +15,13 @@ logger = logging.getLogger()
 
 
 class TritonLoRACompatibleConv(nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
         self.training = module.training
 
     def set_lora_layer(self, lora_layer):
-        if hasattr(self.module, 'set_lora_layer'):
+        if hasattr(self.module, "set_lora_layer"):
             self.module.set_lora_layer(lora_layer)
 
     def forward(self, x, *args, **kwargs):
@@ -32,14 +31,13 @@ class TritonLoRACompatibleConv(nn.Module):
 
 
 class TritonLoRACompatibleLinear(nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
         self.training = module.training
 
     def set_lora_layer(self, lora_layer):
-        if hasattr(self.module, 'set_lora_layer'):
+        if hasattr(self.module, "set_lora_layer"):
             self.module.set_lora_layer(lora_layer)
 
     def forward(self, x, *args, **kwargs):

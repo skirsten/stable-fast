@@ -3,37 +3,35 @@ import functools
 import threading
 import copy
 import torch
-from sfast.utils.flat_tensors import (convert_to_flat_tensors, convert_from_flat_tensors)
+from sfast.utils.flat_tensors import convert_to_flat_tensors, convert_from_flat_tensors
 from sfast.utils.custom_python_operator import register_custom_python_operator
 from .utils import better_trace
 
 logger = logging.getLogger()
 
 
-def trace_with_kwargs(func,
-                      example_inputs=None,
-                      example_kwarg_inputs=None,
-                      **kwargs):
+def trace_with_kwargs(func, example_inputs=None, example_kwarg_inputs=None, **kwargs):
     if example_inputs is None:
         example_inputs = tuple()
     if example_kwarg_inputs is None:
         example_kwarg_inputs = {}
-    pos_args = convert_to_flat_tensors((copy.deepcopy(example_inputs),
-                                        copy.deepcopy(example_kwarg_inputs)))
-    traced_module = better_trace(TraceablePosArgOnlyModuleWrapper(func),
-                                 pos_args, **kwargs)
-    training = getattr(func, 'training', False) if isinstance(
-        func, torch.nn.Module) else None
-    return traced_module, lambda m: TracedPosArgOnlyModuleWrapper(
-        m, training=training)
+    pos_args = convert_to_flat_tensors(
+        (copy.deepcopy(example_inputs), copy.deepcopy(example_kwarg_inputs))
+    )
+    traced_module = better_trace(
+        TraceablePosArgOnlyModuleWrapper(func), pos_args, **kwargs
+    )
+    training = (
+        getattr(func, "training", False) if isinstance(func, torch.nn.Module) else None
+    )
+    return traced_module, lambda m: TracedPosArgOnlyModuleWrapper(m, training=training)
 
 
 def lazy_trace(func, *, ts_compiler=None, **kwargs_):
     lock = threading.Lock()
     traced_modules = {}
 
-    @functools.wraps(
-        func.forward if isinstance(func, torch.nn.Module) else func)
+    @functools.wraps(func.forward if isinstance(func, torch.nn.Module) else func)
     def wrapper(*args, **kwargs):
         nonlocal lock, traced_modules
         key = (hash_arg(args), hash_arg(kwargs))
@@ -46,10 +44,10 @@ def lazy_trace(func, *, ts_compiler=None, **kwargs_):
                         f'Tracing {getattr(func, "__name__", func.__class__.__name__)}'
                     )
                     traced_m, call_helper = trace_with_kwargs(
-                        func, args, kwargs, **kwargs_)
+                        func, args, kwargs, **kwargs_
+                    )
                     if ts_compiler is not None:
-                        traced_m = ts_compiler(traced_m, call_helper, args,
-                                               kwargs)
+                        traced_m = ts_compiler(traced_m, call_helper, args, kwargs)
                     traced_module = call_helper(traced_m)
                     traced_modules[key] = traced_module
         return traced_module(*args, **kwargs)
@@ -62,7 +60,6 @@ def to_module(func, self=None):
         return func
 
     class FuncModule(torch.nn.Module):
-
         def __init__(self, func, module=None):
             super().__init__()
             self.func = func
@@ -73,8 +70,11 @@ def to_module(func, self=None):
         def forward(self, *args, **kwargs):
             return self.func(*args, **kwargs)
 
-    if self is None and hasattr(func, '__self__') and isinstance(
-            func.__self__, torch.nn.Module):
+    if (
+        self is None
+        and hasattr(func, "__self__")
+        and isinstance(func.__self__, torch.nn.Module)
+    ):
         self = func.__self__
     if self is not None:
         return FuncModule(func, self).train(self.training)
@@ -87,19 +87,24 @@ def hash_arg(arg):
     if isinstance(arg, (tuple, list)):
         return tuple(map(hash_arg, arg))
     if isinstance(arg, dict):
-        return tuple(sorted(((hash_arg(k), hash_arg(v)) for k, v in arg.items()),
-                            key=lambda x: x[0]))
+        return tuple(
+            sorted(
+                ((hash_arg(k), hash_arg(v)) for k, v in arg.items()), key=lambda x: x[0]
+            )
+        )
     return type(arg)
 
 
 class TracedPosArgOnlyModuleWrapper(torch.nn.Module):
-
     def __init__(self, module, *, training=None):
         super().__init__()
         self.module = module
         if training is None:
-            training = getattr(module, 'training', False) if isinstance(
-                module, torch.nn.Module) else False
+            training = (
+                getattr(module, "training", False)
+                if isinstance(module, torch.nn.Module)
+                else False
+            )
         self.train(training)
 
     def forward(self, *args, **kwargs):
@@ -109,12 +114,14 @@ class TracedPosArgOnlyModuleWrapper(torch.nn.Module):
 
 
 class TraceablePosArgOnlyModuleWrapper(torch.nn.Module):
-
     def __init__(self, module):
         super().__init__()
         self.module = module
-        training = getattr(module, 'training', False) if isinstance(
-            module, torch.nn.Module) else False
+        training = (
+            getattr(module, "training", False)
+            if isinstance(module, torch.nn.Module)
+            else False
+        )
         self.train(training)
 
     def forward(self, *args):

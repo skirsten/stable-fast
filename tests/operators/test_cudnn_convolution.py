@@ -9,12 +9,12 @@ logger = logging.getLogger()
 
 
 class ConvBiasAddActivation(torch.nn.Module):
-
     def __init__(self, bias=True, activation_cls=None):
         super().__init__()
         self.conv = torch.nn.Conv2d(2, 2, 3, bias=bias)
-        self.act = activation_cls(
-        ) if activation_cls is not None else torch.nn.Identity()
+        self.act = (
+            activation_cls() if activation_cls is not None else torch.nn.Identity()
+        )
 
     def forward(self, x, y=None, alpha=1.0):
         x = self.conv(x)
@@ -37,15 +37,22 @@ class FusedConvBiasAddActivation(torch.nn.Module):
 
 
 def test_conv_bias_add():
-
     class FusedConvBiasAdd(FusedConvBiasAddActivation):
-
         def forward(self, x, y=None, alpha=1.0):
             conv = self.conv
             return torch.ops.sfast.cudnn_convolution_bias_add(
-                x, conv.weight, conv.bias, y, alpha, conv.stride, conv.padding,
-                conv.dilation, conv.transposed, conv.output_padding,
-                conv.groups)
+                x,
+                conv.weight,
+                conv.bias,
+                y,
+                alpha,
+                conv.stride,
+                conv.padding,
+                conv.dilation,
+                conv.transposed,
+                conv.output_padding,
+                conv.groups,
+            )
 
     orig_model = ConvBiasAddActivation()
     orig_model.cuda()
@@ -63,22 +70,25 @@ def test_conv_bias_add():
     fused_out.sum().backward()
 
     torch.testing.assert_close(fused_out, out, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(fused_model.conv.weight.grad,
-                               model.conv.weight.grad)
-    torch.testing.assert_close(fused_model.conv.bias.grad,
-                               model.conv.bias.grad)
+    torch.testing.assert_close(fused_model.conv.weight.grad, model.conv.weight.grad)
+    torch.testing.assert_close(fused_model.conv.bias.grad, model.conv.bias.grad)
 
 
 def test_conv_bias():
-
     class FusedConvBiasAdd(FusedConvBiasAddActivation):
-
         def forward(self, x, y=None, alpha=1.0):
             conv = self.conv
             return torch.ops.sfast.cudnn_convolution_bias(
-                x, conv.weight,  conv.bias, conv.stride, conv.padding,
-                conv.dilation, conv.transposed, conv.output_padding,
-                conv.groups)
+                x,
+                conv.weight,
+                conv.bias,
+                conv.stride,
+                conv.padding,
+                conv.dilation,
+                conv.transposed,
+                conv.output_padding,
+                conv.groups,
+            )
 
     orig_model = ConvBiasAddActivation()
     orig_model.cuda()
@@ -94,22 +104,25 @@ def test_conv_bias():
     fused_out.sum().backward()
 
     torch.testing.assert_close(fused_out, out, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(fused_model.conv.weight.grad,
-                               model.conv.weight.grad)
-    torch.testing.assert_close(fused_model.conv.bias.grad,
-                               model.conv.bias.grad)
+    torch.testing.assert_close(fused_model.conv.weight.grad, model.conv.weight.grad)
+    torch.testing.assert_close(fused_model.conv.bias.grad, model.conv.bias.grad)
 
 
 def test_conv_bias_sigmoid():
-
     class FusedConvBiasAdd(FusedConvBiasAddActivation):
-
         def forward(self, x, y=None, alpha=1.0):
             conv = self.conv
             return torch.ops.sfast.cudnn_convolution_bias_sigmoid(
-                x, conv.weight,  conv.bias, conv.stride, conv.padding,
-                conv.dilation, conv.transposed, conv.output_padding,
-                conv.groups)
+                x,
+                conv.weight,
+                conv.bias,
+                conv.stride,
+                conv.padding,
+                conv.dilation,
+                conv.transposed,
+                conv.output_padding,
+                conv.groups,
+            )
 
     orig_model = ConvBiasAddActivation(activation_cls=torch.nn.Sigmoid)
     orig_model.cuda()
@@ -125,21 +138,25 @@ def test_conv_bias_sigmoid():
     fused_out.sum().backward()
 
     torch.testing.assert_close(fused_out, out, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(fused_model.conv.weight.grad,
-                               model.conv.weight.grad)
-    torch.testing.assert_close(fused_model.conv.bias.grad,
-                               model.conv.bias.grad)
+    torch.testing.assert_close(fused_model.conv.weight.grad, model.conv.weight.grad)
+    torch.testing.assert_close(fused_model.conv.bias.grad, model.conv.bias.grad)
+
 
 def test_conv_bias_relu():
-
     class FusedConvBiasAdd(FusedConvBiasAddActivation):
-
         def forward(self, x, y=None, alpha=1.0):
             conv = self.conv
             return torch.ops.sfast.cudnn_convolution_bias_relu(
-                x, conv.weight,  conv.bias, conv.stride, conv.padding,
-                conv.dilation, conv.transposed, conv.output_padding,
-                conv.groups)
+                x,
+                conv.weight,
+                conv.bias,
+                conv.stride,
+                conv.padding,
+                conv.dilation,
+                conv.transposed,
+                conv.output_padding,
+                conv.groups,
+            )
 
     orig_model = ConvBiasAddActivation(activation_cls=torch.nn.ReLU)
     orig_model.cuda()
@@ -155,22 +172,25 @@ def test_conv_bias_relu():
     fused_out.sum().backward()
 
     torch.testing.assert_close(fused_out, out, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(fused_model.conv.weight.grad,
-                               model.conv.weight.grad)
-    torch.testing.assert_close(fused_model.conv.bias.grad,
-                               model.conv.bias.grad)
+    torch.testing.assert_close(fused_model.conv.weight.grad, model.conv.weight.grad)
+    torch.testing.assert_close(fused_model.conv.bias.grad, model.conv.bias.grad)
 
 
 def test_conv_bias_tanh():
-
     class FusedConvBiasAdd(FusedConvBiasAddActivation):
-
         def forward(self, x, y=None, alpha=1.0):
             conv = self.conv
             return torch.ops.sfast.cudnn_convolution_bias_tanh(
-                x, conv.weight,  conv.bias, conv.stride, conv.padding,
-                conv.dilation, conv.transposed, conv.output_padding,
-                conv.groups)
+                x,
+                conv.weight,
+                conv.bias,
+                conv.stride,
+                conv.padding,
+                conv.dilation,
+                conv.transposed,
+                conv.output_padding,
+                conv.groups,
+            )
 
     orig_model = ConvBiasAddActivation(activation_cls=torch.nn.Tanh)
     orig_model.cuda()
@@ -186,7 +206,5 @@ def test_conv_bias_tanh():
     fused_out.sum().backward()
 
     torch.testing.assert_close(fused_out, out, rtol=1e-3, atol=1e-3)
-    torch.testing.assert_close(fused_model.conv.weight.grad,
-                               model.conv.weight.grad)
-    torch.testing.assert_close(fused_model.conv.bias.grad,
-                               model.conv.bias.grad)
+    torch.testing.assert_close(fused_model.conv.weight.grad, model.conv.weight.grad)
+    torch.testing.assert_close(fused_model.conv.bias.grad, model.conv.bias.grad)

@@ -4,7 +4,6 @@ import functools
 
 
 class ScriptModuleClearHook:
-
     def __init__(self, script_module_c):
         self.class_type = sfast._C._jit_get_module_type(script_module_c)
 
@@ -12,14 +11,15 @@ class ScriptModuleClearHook:
         sfast._C._jit_clear_class_type_registration(self.class_type)
 
 
-def attach_script_module_clear_hook(script_module,
-                                    attr_name='_module_registration_clear_hook'
-                                    ):
+def attach_script_module_clear_hook(
+    script_module, attr_name="_module_registration_clear_hook"
+):
     script_module._register_attribute(
-        attr_name, torch._C.PyObjectType.get(),
-        ScriptModuleClearHook(script_module))
-    for child_name, child_module in torch._C._jit_debug_module_iterators(
-            script_module)['named_children']:
+        attr_name, torch._C.PyObjectType.get(), ScriptModuleClearHook(script_module)
+    )
+    for child_name, child_module in torch._C._jit_debug_module_iterators(script_module)[
+        "named_children"
+    ]:
         attach_script_module_clear_hook(child_module, attr_name)
 
 
