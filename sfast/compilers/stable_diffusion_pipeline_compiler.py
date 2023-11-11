@@ -58,6 +58,11 @@ def compile(m, config):
         if config.memory_format == torch.channels_last:
             m.unet.to(memory_format=torch.channels_last)
             m.vae.to(memory_format=torch.channels_last)
+            m.text_encoder.to(memory_format=torch.channels_last)
+
+            if hasattr(m, "text_encoder_2"):
+                m.text_encoder_2.to(memory_format=torch.channels_last)
+
             if hasattr(m, "controlnet"):
                 m.controlnet.to(memory_format=torch.channels_last)
 
@@ -95,24 +100,20 @@ def compile(m, config):
                 ts_compiler=functools.partial(
                     ts_compiler,
                     freeze=config.enable_jit_freeze,
-                ),
-                check_trace=False,
-                strict=False,
-            )
-
-            # disable jit for text_encoder because of exception caused by
-            # tracing BaseModelOutputPooling of StableDiffusionXLPipeline
-            m.text_encoder.forward = lazy_trace_(to_module(m.text_encoder.forward))
-            unet_forward = lazy_trace(
-                to_module(m.unet.forward),
-                ts_compiler=functools.partial(
-                    ts_compiler,
-                    freeze=config.enable_jit_freeze,
                     enable_cuda_graph=enable_cuda_graph,
                 ),
                 check_trace=False,
                 strict=False,
             )
+
+            m.text_encoder.forward = lazy_trace_(to_module(m.text_encoder.forward))
+
+            if hasattr(m, "text_encoder_2"):
+                m.text_encoder_2.forward = lazy_trace_(
+                    to_module(m.text_encoder_2.forward)
+                )
+
+            unet_forward = lazy_trace_(to_module(m.unet.forward))
 
             @functools.wraps(m.unet.forward)
             def unet_forward_wrapper(sample, t, *args, **kwargs):
@@ -151,7 +152,7 @@ def compile(m, config):
                     to_module(m.controlnet.forward),
                     ts_compiler=functools.partial(
                         ts_compiler,
-                        freeze=False,
+                        freeze=False,  # Why does this not also work for the unet?
                         enable_cuda_graph=enable_cuda_graph,
                     ),
                     check_trace=False,
